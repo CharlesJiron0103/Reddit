@@ -10,7 +10,6 @@ import requests
 from slack_token import *
 from transformers import pipeline
 
-
 comments = set()
 time_stamp_of_reddit_message = set()
 
@@ -59,6 +58,12 @@ def new_post_to_slack(dataQuery, num):
                 sentiment = specific_model(first_128)
                 print(sentiment)
 
+                # Grabbing the Label of the Comments Sentiment
+                onlyLabel = sentiment[0]['label']
+
+                # Outputting the Label of the Comments Sentiment
+                print(f'Sentiment Label: {onlyLabel}')
+
                 # Rounds the Initial Output to the nearest fourth. Then Multiplies by 100 to get the percentage.
                 # Then round the percentage to the nearest whole number.
                 onlyScore = round(round(sentiment[0]['score'], 4) * 100)
@@ -77,26 +82,32 @@ def new_post_to_slack(dataQuery, num):
                 create = data['data'][count]['created_utc']
 
                 # Converting to readable Time of Year, Month, Day, Hour, Second, AM or PM
-                post_created_date = time.strftime('%Y/%m/%d %I:%M:%S %p', time.localtime(create))
+                post_created_date = time.strftime('%Y-%m-%d', time.localtime(create))
 
-                # Conversion completed
-                date = f"Created: {post_created_date}"
+                post_created_time = time.strftime('%I:%M:%S %p', time.localtime(create))
 
-                # Outputting everything into a file
-                fp = open("CommentInformation.txt", "w")
+                # Conversion completed to Date
+                date = post_created_date
 
-                fp.write("Reddit Comments")
-                fp.write(f"\nAuthor: u/{author}")
-                fp.write(f"\nSub-Reddit: r/{subR}")
-                fp.write(f'\nURL: <a href="{postUrl}</a')
-                fp.write(f'\nCreated: {date}')
-                fp.write(f'\nComment: {first_128}')
+                # Conversion Completed to Time
+                time_com = post_created_time
+
+                # # Outputting everything into a file
+                # fp = open("CommentInformation.txt", "w")
+                #
+                # fp.write("Reddit Comments")
+                # fp.write(f"\nAuthor: u/{author}")
+                # fp.write(f"\nSub-Reddit: r/{subR}")
+                # fp.write(f'\nURL: <a href="{postUrl}</a')
+                # fp.write(f'\nCreated: {date}')
+                # fp.write(f'\nComment: {first_128}')
 
                 # Checks Sentiment Score Percentage.
-                if onlyScore >= 75:  # If Score is greater than 75 then display percentage score and thumbs-up
+                if onlyLabel == "POS":  # If Score is greater than 75 then display percentage score and thumbs-up
 
-                    fp.write(f'\nSentiment Analysis: {onlyScore}% - {thumb_up}')
-                    very_Good = f'\n*Sentiment Score*: {onlyScore}% - {thumb_up}'
+                    # fp.write(f'\nSentiment Analysis: {onlyScore}% - {thumb_up}')
+                    very_Good = f'POSITIVE'
+                    very_score_pos = f'{onlyScore}% - {thumb_up}'
 
                     # Using this title to implement the link in it for easier access.
                     title = "View Comment"
@@ -111,42 +122,64 @@ def new_post_to_slack(dataQuery, num):
                             "text":
                                 {
                                     "type": "plain_text",
-                                    "text": f"Addigy Reddit Comment {happy_face}",
+                                    "text": f"Reddit Scrapa {happy_face}\n Comment pulled from keyword {dataQuery}",
                                     "emoji": True
                                 }
 
                         },
                         {
-                            "type": "section",
-                            "fields": [
-                                {
-                                    "type": "mrkdwn",
-                                    "text": f"*Author*: r/{author}\n"
-                                },
-                                {
-                                    "type": "mrkdwn",
-                                    "text": f'*Sub Reddit*: {subR}'
-                                },
-                                {
-                                    "type": "mrkdwn",
-                                    "text": f'*Created*: \n{date}'
-                                },
-                            ]
-
+                            "type": "divider"
                         },
                         {
                             "type": "section",
                             "fields": [
                                 {
                                     "type": "mrkdwn",
-                                    "text": f'*Comment*: {first_128}'
+                                    "text": f"*Author*: \nu/{author}\n"
                                 },
                                 {
                                     "type": "mrkdwn",
-                                    "text": f'\n{very_Good}'
+                                    "text": f'*Sub Reddit*: \nr/{subR}'
+                                },
+                                {
+                                    "type": "mrkdwn",
+                                    "text": f'*When*: \n{date}'
+                                },
+                                {
+                                    "type": "mrkdwn",
+                                    "text": f'*Time*: \n{time_com}'
                                 },
                             ]
-
+                        },
+                        {
+                            "type": "divider"
+                        },
+                        {
+                            "type": "section",
+                            "text":
+                                {
+                                    "type": "mrkdwn",
+                                    "text": f'*Comment*: \n{first_128}'
+                                },
+                        },
+                        {
+                            "type": "divider"
+                        },
+                        {
+                            "type": "section",
+                            "fields": [
+                                {
+                                    "type": "mrkdwn",
+                                    "text": f'*Sentiment Label*\n{very_Good}'
+                                },
+                                {
+                                    "type": "mrkdwn",
+                                    "text": f'*Sentiment Score*: \n{very_score_pos}'
+                                },
+                            ]
+                        },
+                        {
+                            "type": "divider"
                         },
                         {
                             "type": "section",
@@ -165,9 +198,10 @@ def new_post_to_slack(dataQuery, num):
                         'text': create,
                         'blocks': json.dumps(blocks) if blocks else None
                     }).json()
-                elif onlyScore >= 50 or onlyScore <= 74:
-                    fp.write(f'Sentiment Analysis: {onlyScore}% - {neutral_face}')
-                    neutral = f'*Sentiment Score*: {onlyScore}% - {neutral_face}'
+                elif onlyLabel == "NEU":
+                    # fp.write(f'Sentiment Analysis: {onlyScore}% - {neutral_face}')
+                    very_neutral = f'NEUTRAL'
+                    very_score_neu = f'{onlyScore}% - {neutral_face}'
 
                     title = "View Comment"
                     # Displaying it in Slack
@@ -180,7 +214,7 @@ def new_post_to_slack(dataQuery, num):
                             "text":
                                 {
                                     "type": "plain_text",
-                                    "text": f"Addigy Reddit Comment {happy_face}",
+                                    "text": f"Reddit Scrapa {happy_face}\n Comment pulled from keyword {dataQuery}",
                                     "emoji": True
                                 }
 
@@ -190,32 +224,51 @@ def new_post_to_slack(dataQuery, num):
                             "fields": [
                                 {
                                     "type": "mrkdwn",
-                                    "text": f"*Author*: r/{author}\n"
+                                    "text": f"*Author*: \nu/{author}\n"
                                 },
                                 {
                                     "type": "mrkdwn",
-                                    "text": f'*Sub Reddit*: {subR}'
+                                    "text": f'*Sub Reddit*: \nr/{subR}'
                                 },
                                 {
                                     "type": "mrkdwn",
-                                    "text": f'*Created*: \n{date}'
+                                    "text": f'*When*: \n{date}'
+                                },
+                                {
+                                    "type": "mrkdwn",
+                                    "text": f'*Time*: \n{time_com}'
                                 },
                             ]
-
+                        },
+                        {
+                            "type": "divider"
+                        },
+                        {
+                            "type": "section",
+                            "text":
+                                {
+                                    "type": "mrkdwn",
+                                    "text": f'*Comment*: {first_128}'
+                                },
+                        },
+                        {
+                            "type": "divider"
                         },
                         {
                             "type": "section",
                             "fields": [
                                 {
                                     "type": "mrkdwn",
-                                    "text": f'*Comment*: {first_128}'
+                                    "text": f'*Sentiment Label*\n{very_neutral}'
                                 },
                                 {
                                     "type": "mrkdwn",
-                                    "text": f'\n{neutral}'
+                                    "text": f'*Sentiment Score*: \n{very_score_neu}'
                                 },
                             ]
-
+                        },
+                        {
+                          "type": "divider"
                         },
                         {
                             "type": "section",
@@ -234,10 +287,12 @@ def new_post_to_slack(dataQuery, num):
                         'text': create,
                         'blocks': json.dumps(blocks) if blocks else None
                     }).json()
-                elif onlyScore >= 0 or onlyScore <= 49:
 
-                    fp.write(f'Sentiment Analysis: {onlyScore}% - {thumb_down}')
-                    very_bad = f'*Sentiment Score*: {onlyScore}% - {thumb_down}'
+                elif onlyLabel == "NEG":
+
+                    # fp.write(f'Sentiment Analysis: {onlyScore}% - {thumb_down}')
+                    very_bad = f'NEGATIVE'
+                    very_score_bad = f'{onlyScore}% - {thumb_down}'
 
                     title = "View Comment"
                     # Displaying it in Slack
@@ -250,7 +305,7 @@ def new_post_to_slack(dataQuery, num):
                             "text":
                                 {
                                     "type": "plain_text",
-                                    "text": f"Addigy Reddit Comment {happy_face}",
+                                    "text": f"Reddit Scrapa {happy_face}\n Comment pulled from keyword {dataQuery}",
                                     "emoji": True
                                 }
 
@@ -260,32 +315,52 @@ def new_post_to_slack(dataQuery, num):
                             "fields": [
                                 {
                                     "type": "mrkdwn",
-                                    "text": f"*Author*: r/{author}\n"
+                                    "text": f"*Author*: \nu/{author}\n"
                                 },
                                 {
                                     "type": "mrkdwn",
-                                    "text": f'*Sub Reddit*: {subR}'
+                                    "text": f'*Sub Reddit*: \nr/{subR}'
                                 },
                                 {
                                     "type": "mrkdwn",
-                                    "text": f'*Created*: \n{date}'
+                                    "text": f'*When*: \n{date}'
+                                },
+                                {
+                                    "type": "mrkdwn",
+                                    "text": f'*Time*: \n{time_com}'
                                 },
                             ]
 
+                        },
+                        {
+                            "type": "divider"
+                        },
+                        {
+                            "type": "section",
+                            "text":
+                                {
+                                    "type": "mrkdwn",
+                                    "text": f'*Comment*: \n{first_128}'
+                                },
+                        },
+                        {
+                            "type": "divider"
                         },
                         {
                             "type": "section",
                             "fields": [
                                 {
                                     "type": "mrkdwn",
-                                    "text": f'*Comment*: {first_128}'
+                                    "text": f'*Sentiment Label*\n{very_bad}'
                                 },
                                 {
                                     "type": "mrkdwn",
-                                    "text": f'\n{very_bad}'
+                                    "text": f'*Sentiment Score*: \n{very_score_bad}'
                                 },
                             ]
-
+                        },
+                        {
+                            "type": "divider"
                         },
                         {
                             "type": "section",
@@ -306,7 +381,7 @@ def new_post_to_slack(dataQuery, num):
                     }).json()
                 else:
                     print(f'how did you get here in ths section: {crossed_out}')
-                fp.close()
+                # fp.close()
             count -= 1
         else:
             print('no new posts')
@@ -321,7 +396,7 @@ def get_reddit_time_stamp_from_messages_in_slack():
     # channel_id = "C046QKCC97W"
 
     try:
-        limit = 1
+        limit = 250
         # Call the conversations.history method using the WebClient
         # conversations.history returns the first 100 messages by default
         # These results are paginated, see: https://api.slack.com/methods/conversations.history$pagination
@@ -387,7 +462,7 @@ if __name__ == "__main__":
             while True:
                 # if dataQuery has spaces, need to wrap it in \"dataQuery with spaces\"
                 # queries = ['jamf', 'mosyle', 'kandji', 'jamf', "\"manage apple devices\""]
-                queries = ['Black Adam']
+                queries = ['Black Adam', 'Addigy']
 
                 print("\n\nEnter 1 to check for new posts and comments\n"
                       "Enter 2 to exit the program\n")
