@@ -462,7 +462,7 @@ if __name__ == "__main__":
             while True:
                 # if dataQuery has spaces, need to wrap it in \"dataQuery with spaces\"
                 # queries = ['jamf', 'mosyle', 'kandji', 'jamf', "\"manage apple devices\""]
-                queries = ['Black Adam', 'Addigy']
+                queries = ['Addigy', 'Mosyle', 'Kandji', 'Jamf', "\"manage apple devices\""]
 
                 print("\n\nEnter 1 to check for new posts and comments\n"
                       "Enter 2 to exit the program\n")
