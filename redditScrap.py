@@ -49,9 +49,11 @@ def new_post_to_slack(dataQuery, num):
 
                 # Comment Itself without limiting to 128 char
                 body = str(data['data'][count]['body'])
+                print(f'Length of Comment: {len(body)}')
 
                 # Comment with the limit of 128 Char
-                first_128 = body[0:128]
+                first_128 = body[:491]
+                print(f'Length of SLice Comment: {len(first_128)}')
 
                 # Default Limit of 128 Characters and Implementing them in a Sentiment Model Analysis
                 specific_model = pipeline(model="finiteautomata/bertweet-base-sentiment-analysis")
@@ -76,7 +78,7 @@ def new_post_to_slack(dataQuery, num):
                 subR = data['data'][count]['subreddit']
 
                 # Full Comment Link
-                postUrl = f"https://www.reddit.com/{url_Actual}"
+                postUrl = f"https://www.reddit.com{url_Actual}"
 
                 # Comment Date in UTC Format
                 create = data['data'][count]['created_utc']
@@ -268,7 +270,7 @@ def new_post_to_slack(dataQuery, num):
                             ]
                         },
                         {
-                          "type": "divider"
+                            "type": "divider"
                         },
                         {
                             "type": "section",
@@ -396,7 +398,7 @@ def get_reddit_time_stamp_from_messages_in_slack():
     # channel_id = "C046QKCC97W"
 
     try:
-        limit = 250
+        limit = 1
         # Call the conversations.history method using the WebClient
         # conversations.history returns the first 100 messages by default
         # These results are paginated, see: https://api.slack.com/methods/conversations.history$pagination
@@ -462,7 +464,7 @@ if __name__ == "__main__":
             while True:
                 # if dataQuery has spaces, need to wrap it in \"dataQuery with spaces\"
                 # queries = ['jamf', 'mosyle', 'kandji', 'jamf', "\"manage apple devices\""]
-                queries = ['Addigy', 'Mosyle', 'Kandji', 'Jamf', "\"manage apple devices\""]
+                queries = ['leagueoflegends', 'Mosyle', 'Kandji', 'Jamf', "\"manage apple devices\""]
 
                 print("\n\nEnter 1 to check for new posts and comments\n"
                       "Enter 2 to exit the program\n")
